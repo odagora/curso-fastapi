@@ -32,3 +32,23 @@ async def get_time_by_country(country_code: str):
     time_zone = TIME_ZONES[country_code]
     current_time = datetime.now(ZoneInfo(time_zone)).strftime("%Y-%m-%d %H:%M:%S")
     return {"current_time": current_time, "country_code": country_code}
+
+
+@app.get("/time/{country_code}")
+async def get_time_by_country_with_format(country_code: str, format: str = "iso"):
+    country_code = country_code.upper()
+    time_zone = TIME_ZONES.get(country_code, "UTC")
+    current_time = datetime.now(ZoneInfo(time_zone))
+
+    if format == "24h":
+        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    elif format == "12h":
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+    else:
+        formatted_time = current_time.isoformat()
+
+    return {
+        "current_time": formatted_time,
+        "country_code": country_code,
+        "format": format,
+    }
