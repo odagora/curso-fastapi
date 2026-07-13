@@ -1,18 +1,7 @@
-from typing import Annotated
 from fastapi import FastAPI
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from pydantic import BaseModel, Field
-
-
-class Customer(BaseModel):
-    name: str
-    description: str | None = None
-    email: str
-    age: Annotated[int, Field(gt=0, lt=120)]
-    phone: str | None = None
-    is_active: bool = True
-
+from models import Customer, Transaction, InvoiceRequest, InvoiceResponse
 
 app = FastAPI()
 
@@ -69,3 +58,17 @@ async def get_time_by_country_with_format(country_code: str, format: str = "iso"
 @app.post("/customers")
 async def create_customer(customer_data: Customer):
     return customer_data
+
+
+@app.post("/transactions")
+async def create_transaction(transaction_data: Transaction):
+    return transaction_data
+
+
+@app.post("/invoices", response_model=InvoiceResponse)
+async def create_invoice(invoice: InvoiceRequest):
+    return InvoiceResponse(
+        id=invoice.id,
+        customer=invoice.customer,
+        transactions=invoice.transactions,
+    )
