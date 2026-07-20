@@ -36,17 +36,6 @@ async def get_time():
 
 
 @app.get("/time/{country_code}")
-async def get_time_by_country(country_code: str):
-    country_code = country_code.upper()
-    if country_code not in TIME_ZONES:
-        return {"error": "Invalid country code"}
-
-    time_zone = TIME_ZONES[country_code]
-    current_time = datetime.now(ZoneInfo(time_zone)).strftime("%Y-%m-%d %H:%M:%S")
-    return {"current_time": current_time, "country_code": country_code}
-
-
-@app.get("/time/{country_code}")
 async def get_time_by_country_with_format(country_code: str, format: str = "iso"):
     country_code = country_code.upper()
     time_zone = TIME_ZONES.get(country_code, "UTC")
