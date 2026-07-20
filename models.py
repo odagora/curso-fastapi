@@ -15,7 +15,7 @@ class CustomerBase(SQLModel):
 class Customer(CustomerBase, table=True):
     """The real table in the database."""
 
-    id: int | None = None
+    id: int | None = Field(default=None, primary_key=True)
 
 
 class CustomerCreate(CustomerBase):

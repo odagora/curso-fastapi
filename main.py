@@ -1,16 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from sqlmodel import select
 from models import (
+    Customer,
     CustomerPublic,
     CustomerCreate,
     Transaction,
     InvoiceRequest,
     InvoiceResponse,
 )
-from db import SessionDep
+from db import SessionDep, create_all_tables
 
-app = FastAPI()
+app = FastAPI(lifespan=create_all_tables)
 
 TIME_ZONES = {
     "CO": "America/Bogota",
@@ -73,9 +75,9 @@ async def create_customer(customer_data: CustomerCreate, session: SessionDep):
     return customer
 
 
-@app.get("/customers", response_model=dict[int, CustomerPublic])
-async def list_customers():
-    return db_customers
+@app.get("/customers", response_model=list[CustomerPublic])
+async def list_customers(session: SessionDep):
+    return session.exec(select(Customer)).all()
 
 
 @app.get("/customers/{id}")
