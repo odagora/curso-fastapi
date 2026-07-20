@@ -8,6 +8,7 @@ from models import (
     InvoiceRequest,
     InvoiceResponse,
 )
+from db import SessionDep
 
 app = FastAPI()
 
@@ -64,10 +65,11 @@ async def get_time_by_country_with_format(country_code: str, format: str = "iso"
 
 
 @app.post("/customers", response_model=CustomerPublic)
-async def create_customer(customer_data: CustomerCreate):
-    new_id = len(db_customers)
-    customer = CustomerPublic(id=new_id, **customer_data.model_dump())
-    db_customers[new_id] = customer
+async def create_customer(customer_data: CustomerCreate, session: SessionDep):
+    customer = Customer.model_validate(customer_data)
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
     return customer
 
 

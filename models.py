@@ -1,14 +1,21 @@
 from typing import Annotated
 from pydantic import BaseModel, Field, EmailStr, computed_field
+from sqlmodel import SQLModel, Field
 
 
-class CustomerBase(BaseModel):
+class CustomerBase(SQLModel):
     name: str
     description: str | None = None
     email: EmailStr
     age: Annotated[int, Field(gt=0, lt=120)]
     phone: str | None = None
     is_active: bool = True
+
+
+class Customer(CustomerBase, table=True):
+    """The real table in the database."""
+
+    id: int | None = None
 
 
 class CustomerCreate(CustomerBase):
