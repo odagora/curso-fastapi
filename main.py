@@ -69,11 +69,12 @@ async def list_customers(session: SessionDep):
     return session.exec(select(Customer)).all()
 
 
-@app.get("/customers/{id}")
-async def get_customer_by_id(id: int):
-    if id < 0 or id >= len(db_customers):
+@app.get("/customers/{id}", response_model=CustomerPublic)
+async def get_customer_by_id(id: int, session: SessionDep):
+    customer = session.get(Customer, id)
+    if customer is None:
         raise HTTPException(status_code=404, detail="Customer not found")
-    return db_customers[id]
+    return customer
 
 
 @app.post("/transactions")
