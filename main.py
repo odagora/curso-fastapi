@@ -88,8 +88,7 @@ async def update_customer(id: int, customer_data: CustomerUpdate, session: Sessi
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
         )
     update_data = customer_data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(customer, key, value)
+    customer.sqlmodel_update(update_data)
 
     session.add(customer)
     session.commit()
