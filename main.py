@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from sqlmodel import select
@@ -6,6 +6,7 @@ from models import (
     Customer,
     CustomerPublic,
     CustomerCreate,
+    CustomerUpdate,
     Transaction,
     InvoiceRequest,
     InvoiceResponse,
@@ -70,11 +71,42 @@ async def list_customers(session: SessionDep):
 
 
 @app.get("/customers/{id}", response_model=CustomerPublic)
-async def get_customer_by_id(id: int, session: SessionDep):
+async def get_customer(id: int, session: SessionDep):
     customer = session.get(Customer, id)
-    if customer is None:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
+        )
     return customer
+
+
+@app.patch("/customers/{id}", response_model=CustomerPublic)
+async def update_customer(id: int, customer_data: CustomerUpdate, session: SessionDep):
+    customer = session.get(Customer, id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
+        )
+    update_data = customer_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(customer, key, value)
+
+    session.add(customer)
+    session.commit()
+    session.refresh(customer)
+    return customer
+
+
+@app.delete("/customers/{id}")
+async def delete_customer(id: int, session: SessionDep):
+    customer = session.get(Customer, id)
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
+        )
+    session.delete(customer)
+    session.commit()
+    return {"detail": "ok"}
 
 
 @app.post("/transactions")

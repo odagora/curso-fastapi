@@ -28,6 +28,15 @@ class CustomerPublic(CustomerBase):
     id: int
 
 
+class CustomerUpdate(SQLModel):
+    name: str | None = None
+    description: str | None = None
+    email: EmailStr | None = None
+    age: Annotated[int | None, Field(gt=0, lt=120)] = None
+    phone: str | None = None
+    is_active: bool | None = None
+
+
 class Transaction(BaseModel):
     id: int
     amount: int
