@@ -3,15 +3,14 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from models import (
     CustomerPublic,
-    Transaction,
-    InvoiceRequest,
-    InvoiceResponse,
 )
-from .routers import customers
+from .routers import customers, transactions, invoices
 from db import create_all_tables
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
+app.include_router(transactions.router)
+app.include_router(invoices.router)
 
 TIME_ZONES = {
     "CO": "America/Bogota",
@@ -52,17 +51,3 @@ async def get_time_by_country_with_format(country_code: str, format: str = "iso"
         "country_code": country_code,
         "format": format,
     }
-
-
-@app.post("/transactions")
-async def create_transaction(transaction_data: Transaction):
-    return transaction_data
-
-
-@app.post("/invoices", response_model=InvoiceResponse)
-async def create_invoice(invoice: InvoiceRequest):
-    return InvoiceResponse(
-        id=invoice.id,
-        customer=invoice.customer,
-        transactions=invoice.transactions,
-    )
