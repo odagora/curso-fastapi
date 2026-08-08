@@ -1,6 +1,6 @@
 from typing import Annotated
 from pydantic import BaseModel, Field, EmailStr, computed_field
-from sqlmodel import SQLModel, Field
+from sqlmodel import Relationship, SQLModel, Field
 
 
 class CustomerBase(SQLModel):
@@ -16,6 +16,7 @@ class Customer(CustomerBase, table=True):
     """The real table in the database."""
 
     id: int | None = Field(default=None, primary_key=True)
+    transactions: list["Transaction"] = Relationship(back_populates="customer")
 
 
 class CustomerCreate(CustomerBase):
@@ -37,10 +38,19 @@ class CustomerUpdate(SQLModel):
     is_active: bool | None = None
 
 
-class Transaction(BaseModel):
-    id: int
+class TransactionBase(SQLModel):
     amount: int
     description: str
+
+
+class TransactionCreate(TransactionBase):
+    customer_id: int = Field(foreign_key="customer.id")
+
+
+class Transaction(TransactionBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    customer_id: int = Field(foreign_key="customer.id")
+    customer: Customer = Relationship(back_populates="transactions")
 
 
 class InvoiceRequest(BaseModel):
