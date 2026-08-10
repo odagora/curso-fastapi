@@ -9,14 +9,29 @@ class CustomerPlan(SQLModel, table=True):
     customer_id: int = Field(foreign_key="customer.id")
 
 
-class Plan(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+class PlanBase(SQLModel):
     name: str
     price: int
     description: str
+
+
+class Plan(PlanBase, table=True):
+    """The real table in the database."""
+
+    id: int | None = Field(default=None, primary_key=True)
     customers: list["Customer"] = Relationship(
         back_populates="plans", link_model=CustomerPlan
     )
+
+
+class PlanCreate(PlanBase):
+    """What the client sends to create a new plan."""
+
+
+class PlanPublic(PlanBase):
+    """What the server returns to client"""
+
+    id: int
 
 
 class CustomerBase(SQLModel):
