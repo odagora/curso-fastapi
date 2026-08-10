@@ -3,6 +3,22 @@ from pydantic import BaseModel, Field, EmailStr, computed_field
 from sqlmodel import Relationship, SQLModel, Field
 
 
+class CustomerPlan(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    plan_id: int = Field(foreign_key="plan.id")
+    customer_id: int = Field(foreign_key="customer.id")
+
+
+class Plan(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    price: int
+    description: str
+    customers: list["Customer"] = Relationship(
+        back_populates="plans", link_model=CustomerPlan
+    )
+
+
 class CustomerBase(SQLModel):
     name: str
     description: str | None = None
@@ -17,6 +33,9 @@ class Customer(CustomerBase, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     transactions: list["Transaction"] = Relationship(back_populates="customer")
+    plans: list[Plan] = Relationship(
+        back_populates="customers", link_model=CustomerPlan
+    )
 
 
 class CustomerCreate(CustomerBase):
