@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status, APIRouter
+from fastapi import HTTPException, Query, status, APIRouter
 from sqlmodel import and_, select
 from models import (
     CustomerPlan,
@@ -7,6 +7,7 @@ from models import (
     Customer,
     CustomerUpdate,
     Plan,
+    StatusEnum,
 )
 from db import SessionDep
 
@@ -73,7 +74,10 @@ async def delete_customer(customer_id: int, session: SessionDep):
     status_code=status.HTTP_201_CREATED,
 )
 async def subscribe_customer_to_plan(
-    customer_id: int, plan_id: int, session: SessionDep
+    customer_id: int,
+    plan_id: int,
+    session: SessionDep,
+    plan_status: StatusEnum = Query(default=StatusEnum.ACTIVE),
 ):
     customer_db = session.get(Customer, customer_id)
     plan_db = session.get(Plan, plan_id)
@@ -81,7 +85,9 @@ async def subscribe_customer_to_plan(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer or Plan not found"
         )
-    customer_plan = CustomerPlan(plan_id=plan_id, customer_id=customer_id)
+    customer_plan = CustomerPlan(
+        plan_id=plan_id, customer_id=customer_id, status=plan_status
+    )
     session.add(customer_plan)
     session.commit()
     session.refresh(customer_plan)
@@ -89,7 +95,11 @@ async def subscribe_customer_to_plan(
 
 
 @router.get("/{customer_id}/plans", response_model=list[Plan])
-async def list_customer_active_plans(customer_id: int, session: SessionDep):
+async def list_customer_plans(
+    customer_id: int,
+    session: SessionDep,
+    plan_status: StatusEnum = Query(default=StatusEnum.ACTIVE),
+):
     customer_db = session.get(Customer, customer_id)
     if not customer_db:
         raise HTTPException(
@@ -100,7 +110,8 @@ async def list_customer_active_plans(customer_id: int, session: SessionDep):
         .join(CustomerPlan)
         .where(
             and_(
-                CustomerPlan.customer_id == customer_id, CustomerPlan.is_active == True
+                CustomerPlan.customer_id == customer_id,
+                CustomerPlan.status == plan_status,
             )
         )
     ).all()
