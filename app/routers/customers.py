@@ -98,7 +98,7 @@ async def subscribe_customer_to_plan(
 async def list_customer_plans(
     customer_id: int,
     session: SessionDep,
-    plan_status: StatusEnum = Query(default=StatusEnum.ACTIVE),
+    plan_status: list[StatusEnum] = Query(default=[StatusEnum.ACTIVE]),
 ):
     customer_db = session.get(Customer, customer_id)
     if not customer_db:
@@ -111,7 +111,7 @@ async def list_customer_plans(
         .where(
             and_(
                 CustomerPlan.customer_id == customer_id,
-                CustomerPlan.status == plan_status,
+                CustomerPlan.status.in_(plan_status),  # type: ignore[attr-defined]
             )
         )
     ).all()
