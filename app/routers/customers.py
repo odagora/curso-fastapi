@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status, APIRouter
-from sqlmodel import select
+from sqlmodel import and_, select
 from models import (
     CustomerPlan,
     CustomerPublic,
@@ -89,10 +89,19 @@ async def subscribe_customer_to_plan(
 
 
 @router.get("/{customer_id}/plans", response_model=list[Plan])
-async def list_customer_plans(customer_id: int, session: SessionDep):
+async def list_customer_active_plans(customer_id: int, session: SessionDep):
     customer_db = session.get(Customer, customer_id)
     if not customer_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found"
         )
-    return customer_db.plans
+    active_plans_db = session.exec(
+        select(Plan)
+        .join(CustomerPlan)
+        .where(
+            and_(
+                CustomerPlan.customer_id == customer_id, CustomerPlan.is_active == True
+            )
+        )
+    ).all()
+    return active_plans_db
