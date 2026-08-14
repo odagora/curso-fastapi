@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Query, status, APIRouter
-from sqlmodel import and_, select
+from sqlmodel import and_, or_, select
 from models import (
     CustomerPlan,
     CustomerPublic,
@@ -111,7 +111,7 @@ async def list_customer_plans(
         .where(
             and_(
                 CustomerPlan.customer_id == customer_id,
-                CustomerPlan.status.in_(plan_status),  # type: ignore[attr-defined]
+                or_(*[CustomerPlan.status == status for status in plan_status]),
             )
         )
     ).all()
