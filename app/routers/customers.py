@@ -16,6 +16,13 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 
 @router.post("", response_model=CustomerPublic)
 async def create_customer(customer_data: CustomerCreate, session: SessionDep):
+    query = select(Customer).where(Customer.email == customer_data.email)
+    existing = session.exec(query).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already registered",
+        )
     customer = Customer.model_validate(customer_data)
     session.add(customer)
     session.commit()
