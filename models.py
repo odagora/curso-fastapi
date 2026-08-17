@@ -1,6 +1,13 @@
 from enum import Enum
 from typing import Annotated
-from pydantic import BaseModel, Field, EmailStr, computed_field
+from phonenumbers import (
+    parse,
+    is_valid_number,
+    format_number,
+    PhoneNumberFormat,
+    NumberParseException,
+)
+from pydantic import BaseModel, Field, EmailStr, computed_field, field_validator
 from sqlmodel import Relationship, SQLModel, Field
 
 
@@ -48,6 +55,23 @@ class CustomerBase(SQLModel):
     age: Annotated[int, Field(gt=0, lt=120)]
     phone: str | None = None
     is_active: bool = True
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value):
+        if not value:
+            return value
+        try:
+            parsed = parse(value)
+            if not is_valid_number(parsed):
+                raise ValueError("invalid phone number")
+        except NumberParseException as e:
+            if "default region" in str(e).lower():
+                raise ValueError(
+                    "phone number must include country code (e.g., +57...)"
+                )
+            raise ValueError("invalid phone format")
+        return format_number(parsed, PhoneNumberFormat.E164)
 
 
 class Customer(CustomerBase, table=True):
