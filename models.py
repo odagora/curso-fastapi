@@ -54,6 +54,7 @@ class Customer(CustomerBase, table=True):
     """The real table in the database."""
 
     id: int | None = Field(default=None, primary_key=True)
+    email: EmailStr = Field(unique=True, index=True)
     transactions: list["Transaction"] = Relationship(back_populates="customer")
     plans: list[Plan] = Relationship(
         back_populates="customers", link_model=CustomerPlan

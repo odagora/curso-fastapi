@@ -1,4 +1,5 @@
 from fastapi import HTTPException, Query, status, APIRouter
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import and_, or_, select
 from models import (
     CustomerPlan,
@@ -16,16 +17,16 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 
 @router.post("", response_model=CustomerPublic)
 async def create_customer(customer_data: CustomerCreate, session: SessionDep):
-    query = select(Customer).where(Customer.email == customer_data.email)
-    existing = session.exec(query).first()
-    if existing:
+    customer = Customer.model_validate(customer_data)
+    session.add(customer)
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This email is already registered",
         )
-    customer = Customer.model_validate(customer_data)
-    session.add(customer)
-    session.commit()
     session.refresh(customer)
     return customer
 
@@ -58,7 +59,14 @@ async def update_customer(
     customer.sqlmodel_update(update_data)
 
     session.add(customer)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already registered",
+        )
     session.refresh(customer)
     return customer
 
