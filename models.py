@@ -134,3 +134,9 @@ class InvoiceResponse(BaseModel):
     @property
     def total_amount(self) -> int:
         return sum(transaction.amount for transaction in self.transactions)
+
+
+class PaginatedTransactions(BaseModel):
+    data: list[Transaction]
+    total: int
+    count: int
