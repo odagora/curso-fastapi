@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlmodel import func, select
-from models import Customer, Transaction, TransactionCreate, PaginatedTransactions
+from models import Customer, Transaction, TransactionCreate
 from db import SessionDep
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -21,9 +21,21 @@ async def create_transaction(transaction_data: TransactionCreate, session: Sessi
     return transaction
 
 
-@router.get("", response_model=PaginatedTransactions)
+@router.get(
+    "",
+    response_model=list[Transaction],
+    responses={
+        200: {
+            "headers": {
+                "X-Total-Count": {"description": "Total number of transactions", "schema": {"type": "integer"}},
+                "X-Page-Count": {"description": "Items in current page", "schema": {"type": "integer"}},
+            }
+        }
+    },
+)
 async def list_transactions(
     session: SessionDep,
+    response: Response,
     cursor: int | None = Query(None, description="Last transaction ID seen"),
     limit: int = Query(10, description="Number of items to return", le=100),
 ):
@@ -37,8 +49,7 @@ async def list_transactions(
         select(func.count(Transaction.id))  # type: ignore[arg-type]
     ).one()
 
-    return PaginatedTransactions(
-        data=transactions,
-        total=total,
-        count=len(transactions),
-    )
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["X-Page-Count"] = str(len(transactions))
+
+    return transactions
