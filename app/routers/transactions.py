@@ -24,9 +24,12 @@ async def create_transaction(transaction_data: TransactionCreate, session: Sessi
 @router.get("", response_model=list[Transaction])
 async def list_transactions(
     session: SessionDep,
-    skip: int = Query(0, description="Number of items to omit", ge=0),
+    cursor: int | None = Query(None, description="Last transaction ID seen"),
     limit: int = Query(10, description="Number of items to return", le=100),
 ):
-    query = select(Transaction).offset(skip).limit(limit)
+    query = select(Transaction)
+    if cursor is not None:
+        query = query.where(Transaction.id > cursor)  # type: ignore[operator]
+    query = query.order_by(Transaction.id).limit(limit)  # type: ignore[operator]
     transactions = session.exec(query).all()
     return transactions
